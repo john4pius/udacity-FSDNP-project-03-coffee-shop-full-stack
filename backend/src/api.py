@@ -20,7 +20,7 @@ db_drop_and_create_all()
 
 ## ROUTES
 '''
-@TODO implement endpoint
+Implement endpoint
     GET /drinks
         it should be a public endpoint
         it should contain only the drink.short() data representation
@@ -28,9 +28,21 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks', methods=['GET'])
+def get_drinks():
+    try:
+        drinks = Drink.query.all()
+
+        return jsonify({
+            'success': True,
+            'drinks': [drink.short() for drink in drinks]
+        })
+
+    except:
+        abort(404)
 
 '''
-@TODO implement endpoint
+Implement endpoint
     GET /drinks-detail
         it should require the 'get:drinks-detail' permission
         it should contain the drink.long() data representation
@@ -38,9 +50,21 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks-detail', methods=['GET'])
+@requires_auth('get:drinks-detail')
+def get_drinks_detail(jwt):
+    drinks = Drink.query.all()
+
+    if len(drinks) == 0:
+        abort(404)
+
+    return jsonify({
+        "success": True,
+        "drinks": [drink.long() for drink in drinks]
+    })
 
 '''
-@TODO implement endpoint
+Implement endpoint
     POST /drinks
         it should create a new row in the drinks table
         it should require the 'post:drinks' permission
@@ -49,9 +73,31 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
+def post_drinks(jwt):
+    body = request.get_json()
+    if not ('title' in body and 'recipe' in body):
+        abort(422)
+
+    new_drink = body.get('title')
+    new_recipe = body.get('recipe')
+
+    try:
+        drink = Drink(title=new_drink, recipe=json.dumps(new_recipe))
+        drink.insert()
+
+        return jsonify({
+            "success": True,
+            "drinks": [drink.long()]
+        })
+
+    except:
+        abort(404)
+
 
 '''
-@TODO implement endpoint
+Implement endpoint
     PATCH /drinks/<id>
         where <id> is the existing model id
         it should respond with a 404 error if <id> is not found
@@ -62,9 +108,38 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<id>', methods=['PATCH'])
+@requires_auth('patch:drinks')
+def update_drink(jwt, id):
+
+    daDrink = Drink.query.get(id)
+
+    if daDrink:
+        try:
+            body = request.get_json()
+
+            title = body.get('title')
+            recipe = body.get('recipe')
+
+            if title:
+                daDrink.title = title
+            if recipe:
+                daDrink.recipe = recipe
+
+            daDrink.update()
+
+            return jsonify({
+                "success": True,
+                "drinks": [daDrink.long()]
+            })
+
+        except:
+            abort(422)
+    else:
+        abort(404)
 
 '''
-@TODO implement endpoint
+Implement endpoint
     DELETE /drinks/<id>
         where <id> is the existing model id
         it should respond with a 404 error if <id> is not found
@@ -74,6 +149,25 @@ db_drop_and_create_all()
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(jwt, id):
+    daDrink = Drink.query.get(id)
+
+    if daDrink:
+        try:
+
+            daDrink.delete()
+
+            return jsonify({
+                "success": True,
+                "delete": id
+            })
+
+        except:
+            abort(422)
+    else:
+        abort(404)
 
 ## Error Handling
 '''
@@ -88,7 +182,7 @@ def unprocessable(error):
                     }), 422
 
 '''
-@TODO implement error handlers using the @app.errorhandler(error) decorator
+Implement error handlers using the @app.errorhandler(error) decorator
     each error handler should return (with approprate messages):
              jsonify({
                     "success": False, 
@@ -99,12 +193,28 @@ def unprocessable(error):
 '''
 
 '''
-@TODO implement error handler for 404
+Implement error handler for 404
     error handler should conform to general task above 
 '''
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+    }), 404
+
 
 '''
-@TODO implement error handler for AuthError
+Implement error handler for AuthError
     error handler should conform to general task above 
 '''
+
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    return jsonify({
+        "success": False,
+        "error": ex.status_code,
+        'message': ex.error
+    }), 401
