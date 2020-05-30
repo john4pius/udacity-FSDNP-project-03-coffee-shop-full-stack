@@ -40,8 +40,9 @@ def get_drinks():
             'drinks': [drink.short() for drink in drinks]
         })
 
-    except:
+    except Exception:
         abort(404)
+
 
 '''
 Implement endpoint
@@ -65,7 +66,7 @@ def drinks_detail(token):
             'drinks': [drink.long() for drink in drinks]
         })
 
-    except:
+    except Exception:
         abort(404)
 
 
@@ -100,7 +101,7 @@ def post_drinks(jwt):
             "drinks": [drink.long()]
         })
 
-    except:
+    except Exception:
         abort(404)
 
 
@@ -143,10 +144,11 @@ def update_drink(jwt, id):
                 "drinks": [daDrink.long()]
             })
 
-        except:
+        except Exception:
             abort(422)
     else:
         abort(404)
+
 
 '''
 Implement endpoint
@@ -176,10 +178,11 @@ def delete_drink(jwt, id):
                 "delete": id
             })
 
-        except:
+        except Exception:
             abort(422)
     else:
         abort(404)
+
 
 # Error Handling
 '''
@@ -194,6 +197,7 @@ def unprocessable(error):
                     "error": 422,
                     "message": "unprocessable"
                     }), 422
+
 
 '''
 Implement error handlers using the @app.errorhandler(error) decorator
