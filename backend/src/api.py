@@ -56,16 +56,18 @@ Implement endpoint
 
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
-def get_drinks_detail(jwt):
-    drinks = Drink.query.all()
+def drinks_detail(token):
+    try:
+        drinks = Drink.query.all()
 
-    if len(drinks) == 0:
+        return jsonify({
+            'success': True,
+            'drinks': [drink.long() for drink in drinks]
+        })
+
+    except:
         abort(404)
 
-    return jsonify({
-        "success": True,
-        "drinks": [drink.long() for drink in drinks]
-    })
 
 '''
 Implement endpoint
